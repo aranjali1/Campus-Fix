@@ -61,7 +61,7 @@ const SubmitComplaint = () => {
     try {
       setLoading(true);
 
-      const response = await fetch('/api/admin/complaints', {
+      const response = await fetch('/api/complaints', {
         method: 'POST',
         headers: {
           Authorization: `Bearer ${localStorage.getItem('token')}`,

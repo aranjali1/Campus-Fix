@@ -11,6 +11,7 @@ function AdminCard({ complaint, onStatusChange, onAssignTeam }) {
     _id,
     createdAt,
     user,
+    detailedLocation,
   } = complaint;
 
   const imaged = image?.[0]?.replace(/\\/g, "/");
@@ -61,7 +62,7 @@ function AdminCard({ complaint, onStatusChange, onAssignTeam }) {
       )}
 
       <div className="text-xs text-gray-500 flex flex-wrap gap-3 mb-2">
-        <span>📍 {location}</span>
+        <span>📍 {location}-{detailedLocation}</span>
         <span>📅 {formattedDate}</span>
         <span>🙋 {user?.name}</span>
         <span>✉️ {user?.email}</span>
