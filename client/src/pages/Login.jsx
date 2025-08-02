@@ -173,11 +173,11 @@ const Login = () => {
 
       <div className="mt-6 bg-gray-100 border border-gray-300 p-4 rounded-lg text-xs text-left">
         <h3 className="font-semibold mb-2 text-sm text-gray-700">🔐 Test Credentials:</h3>
-        <p><strong>Admin Email:</strong> <code>admin@example.com</code></p>
-        <p><strong>Admin Password:</strong> <code>admin</code></p>
-        <p className="mt-2"><strong>Student Email:</strong> <code>student@example.com</code></p>
-        <p><strong>Student Password:</strong> <code>student</code></p>
-        <p className="mt-2"><strong>SuperAdmin Email:</strong> <code>superadmin@example.com</code></p>
+        <p><strong>Admin Email:</strong> <code>hostel1@gmail.com</code></p>
+        <p><strong>Admin Password:</strong> <code>hostel</code></p>
+        <p className="mt-2"><strong>Student Email:</strong> <code>kittu@gmail.com</code></p>
+        <p><strong>Student Password:</strong> <code>kittuji</code></p>
+        <p className="mt-2"><strong>SuperAdmin Email:</strong> <code>superadmin@gmail.com</code></p>
         <p><strong>SuperAdmin Password:</strong> <code>superadmin</code></p>
       </div>
     </div>
