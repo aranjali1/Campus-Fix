@@ -7,14 +7,17 @@ const Login = () => {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [state, setState] = useState('login');
   const [role, setRole] = useState('student'); // student | admin | superadmin
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setLoading(true);
 
     // Prevent admin from signing up through this form
     if (state === 'signup' && (role === 'admin' || role === 'superadmin')) {
       alert(`${role[0].toUpperCase() + role.slice(1)}s must register through the dedicated registration page.`);
+      setLoading(false);
       return;
     }
 
@@ -34,8 +37,12 @@ const Login = () => {
 
     try {
       const res = await axios.post(`${BASE_URL}${endpoint}`, dataToSend);
-      const { token, user,admin,superadmin } = res.data;
-      const account=user||admin||superadmin;
+      const { token, user, admin, superadmin } = res.data;
+      const account = user || admin || superadmin;
+
+      if (!token) {
+        throw new Error('No token received from server');
+      }
 
       localStorage.setItem('token', token);
       localStorage.setItem('role', account?.role || role);
@@ -44,6 +51,7 @@ const Login = () => {
       if (state === 'signup') {
         alert('Registration successful! Please log in.');
         setState('login');
+        setForm({ name: '', email: '', password: '' });
       } else {
         const resolvedRole = account?.role || role;
         if (resolvedRole === 'superadmin' || role === 'superadmin') {
@@ -56,10 +64,12 @@ const Login = () => {
       }
     } catch (error) {
       console.error('Error during authentication:', error);
-      alert(
-        error.response?.data?.message ||
-        'Authentication failed. Please try again.'
-      );
+      const errorMessage = error.response?.data?.message || 
+                          error.message || 
+                          'Authentication failed. Please try again.';
+      alert(errorMessage);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -129,9 +139,10 @@ const Login = () => {
 
         <button
           type="submit"
-          className="w-full bg-[#0f172a] hover:bg-[#1e293b] text-white py-2.5 rounded-full transition"
+          disabled={loading}
+          className="w-full bg-[#0f172a] hover:bg-[#1e293b] text-white py-2.5 rounded-full transition disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {state === 'login' ? 'Log In' : 'Sign Up'}
+          {loading ? 'Processing...' : (state === 'login' ? 'Log In' : 'Sign Up')}
         </button>
       </form>
 
@@ -148,7 +159,7 @@ const Login = () => {
           </p>
         ) : (
           <p>
-            Don’t have an account?{' '}
+            Don't have an account?{' '}
             <span
               onClick={() => setState('signup')}
               className="text-indigo-500 hover:underline cursor-pointer"

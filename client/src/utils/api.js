@@ -25,6 +25,7 @@ export const login=async(formData)=>{
 }
 
 export const getUser=async()=>{
+    const token = localStorage.getItem('token');
     const res=await fetch(`${API_BASE}/getUser`,{
         method:"GET",
         headers:{
