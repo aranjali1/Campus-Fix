@@ -241,11 +241,10 @@ export const createPaymentIntent = async (req, res) => {
       return res.status(404).json({ message: "Complaint not found" });
     }
 
-    const provider = complaint.assignedToProvider;
-    if (!provider || !provider.stripeAccountId) {
-      return res.status(404).json({ message: "Provider not onboarded with Stripe" });
+    if(!complaint.assignedToProvider?.stripeAccountId){
+      return res.status(400).json({ message: "Provider has not been assigned to this complaint"});
     }
-
+    const provider=await Servicer.findById(complaint.assignedToProvider._id);
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100),
       currency: 'inr',

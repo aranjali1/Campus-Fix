@@ -107,6 +107,7 @@ export const getProviderProfile=(req,res)=>{
     email:req.user.email,
     phone:req.user.phone,
     role:'provider',
+    stripeAccountId:req.user.stripeAccountId || null,
   });
 }
 
@@ -210,7 +211,7 @@ const stripe=stripePackage(process.env.STRIPE_SECRET_KEY);
 
 export const createStripeAccount=async(req,res)=>{
   try{
-    const provider= await Servicer.findById(req.params.id);
+    const provider= await Servicer.findById(req.user._id);
     if(!provider) {
       return res.status(404).json({ message: 'Provider not found' });
   }

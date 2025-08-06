@@ -1,104 +1,141 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import BASE_URL from '../utils/api';
+import VITE_SERVER_URL from '../utils/api';
 
 const ProviderDashboard = () => {
   const [complaints, setComplaints] = useState([]);
+  const [provider, setProvider] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [costInputs, setCostInputs] = useState({});
+  const [hasStripeAccount, setHasStripeAccount] = useState(false);
 
-  const fetchComplaints = async () => {
-    try {
+  useEffect(() => {
+    const fetchProviderData = async () => {
       const token = localStorage.getItem('token');
-      const res = await axios.get(`${BASE_URL}/api/provider/assigned`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setComplaints(res.data.complaints || []);
-    } catch (err) {
-      console.error('Error fetching complaints:', err);
-      alert('Failed to load complaints.');
-    } finally {
-      setLoading(false);
-    }
-  };
+      try {
+        // Fetch complaints
+        const complaintRes = await axios.get(`${VITE_SERVER_URL}/api/provider/assigned`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const complaintsData = Array.isArray(complaintRes.data.complaints) ? complaintRes.data.complaints : [];
+        setComplaints(complaintsData);
+        
+        // Initialize cost inputs
+        const initialCosts = {};
+        complaintsData.forEach(complaint => {
+          if (complaint.providerCost !== undefined) {
+            initialCosts[complaint._id] = complaint.providerCost.toString();
+          }
+        });
+        setCostInputs(initialCosts);
 
-  const updateProviderStatus = async (complaintId, newStatus) => {
+        // Fetch provider profile
+        const profileRes = await axios.get(`${VITE_SERVER_URL}/api/provider/me`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        
+        setProvider(profileRes.data);
+        setHasStripeAccount(!!profileRes.data.stripeAccountId);
+        setError(null);
+      } catch (err) {
+        console.error(err);
+        setError('Failed to load dashboard data.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProviderData();
+  }, []);
+
+  const updateProviderStatus = async (complaintId, providerStatus) => {
+    const token = localStorage.getItem('token');
     try {
-      const token = localStorage.getItem('token');
-      await axios.put(`${BASE_URL}/api/provider/update-status`, {
-        complaintId,
-        providerStatus: newStatus
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      // Update local state
-      setComplaints(prev => prev.map(complaint => 
-        complaint._id === complaintId 
-          ? { ...complaint, providerStatus: newStatus }
-          : complaint
-      ));
-      
-      alert(`Status updated to ${newStatus}`);
-    } catch (err) {
-      console.error('Error updating status:', err);
-      alert('Failed to update status.');
-    }
-  };
+      await axios.put(
+        `${VITE_SERVER_URL}/api/provider/update-status`,
+        { complaintId, providerStatus },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
 
-  const updateProviderCost = async (complaintId) => {
-    const newCost = costInputs[complaintId];
-    if (!newCost) {
-      alert('Please enter a cost amount.');
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      await axios.put(`${BASE_URL}/api/provider/update-cost`, {
-        complaintId,
-        providerCost: newCost
-      }, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      
-      // Update local state
-      setComplaints(prev => prev.map(complaint => 
-        complaint._id === complaintId 
-          ? { ...complaint, providerCost: newCost }
-          : complaint
-      ));
-      
-      alert(`Cost updated to ₹${newCost}`);
+      setComplaints(prev =>
+        prev.map(comp => (comp._id === complaintId ? { ...comp, providerStatus } : comp))
+      );
     } catch (err) {
-      console.error('Error updating cost:', err);
-      alert('Failed to update cost.');
+      console.error(err);
     }
   };
 
   const handleCostChange = (complaintId, value) => {
-    setCostInputs(prev => ({
-      ...prev,
-      [complaintId]: value
-    }));
+    if (value === '' || /^\d*\.?\d*$/.test(value)) {
+      setCostInputs(prev => ({
+        ...prev,
+        [complaintId]: value
+      }));
+    }
   };
 
-  useEffect(() => {
-    fetchComplaints();
-  }, []);
+  const updateProviderCost = async (complaintId) => {
+    const token = localStorage.getItem('token');
+    const providerCost = costInputs[complaintId];
+    
+    if (!providerCost || isNaN(providerCost)) {
+      alert('Please enter a valid cost amount');
+      return;
+    }
+
+    try {
+      const response = await axios.put(
+        `${VITE_SERVER_URL}/api/provider/update-cost`,
+        { complaintId, providerCost: parseFloat(providerCost) },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+      
+      if (response.data.success) {
+        setComplaints(prev =>
+          prev.map(comp => 
+            comp._id === complaintId 
+              ? { ...comp, providerCost: parseFloat(providerCost) } 
+              : comp
+          )
+        );
+        alert('Cost updated successfully!');
+      } else {
+        throw new Error(response.data.message || 'Failed to update cost');
+      }
+    } catch (err) {
+      console.error('Error updating cost:', err);
+      alert(err.message || 'Failed to update cost. Please try again.');
+    }
+  };
+
+  const onboardStripe = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await axios.post(
+        `${VITE_SERVER_URL}/api/provider/create-stripe-account`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      window.location.href = res.data.url;
+    } catch (err) {
+      console.error('Stripe onboarding failed:', err);
+      alert('Stripe onboarding failed. Please try again.');
+    }
+  };
 
   const getStatusStyle = (status) => {
-    switch (status?.toLowerCase()) {
-      case "pending":
-        return "bg-yellow-100 text-yellow-800";
-      case "in progress":
-        return "bg-blue-100 text-blue-800";
-      case "resolved":
-        return "bg-green-100 text-green-800";
-      case "rejected":
-        return "bg-red-100 text-red-800";
+    switch (status) {
+      case 'In Progress':
+        return 'bg-blue-100 text-blue-700';
+      case 'Resolved':
+        return 'bg-green-100 text-green-700';
+      case 'Rejected':
+        return 'bg-red-100 text-red-700';
       default:
-        return "bg-gray-100 text-gray-800";
+        return 'bg-gray-100 text-gray-700';
     }
   };
 
@@ -108,8 +145,22 @@ const ProviderDashboard = () => {
         🛠️ My Assigned Complaints
       </h2>
 
+      {/* Fixed Stripe button rendering */}
+      {!loading && provider && !hasStripeAccount && (
+        <div className="text-center mb-8">
+          <button
+            onClick={onboardStripe}
+            className="bg-purple-600 text-white px-4 py-2 rounded-lg shadow-md hover:bg-purple-700 transition"
+          >
+            💳 Setup Stripe Payment
+          </button>
+        </div>
+      )}
+
       {loading ? (
         <p className="text-center text-lg text-[#334155] animate-pulse">Loading complaints...</p>
+      ) : error ? (
+        <div className="text-center text-red-500">{error}</div>
       ) : complaints.length === 0 ? (
         <div className="text-center">
           <div className="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -122,7 +173,7 @@ const ProviderDashboard = () => {
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {complaints.map((complaint) => {
             const imageUrl = complaint.image?.[0]?.replace(/\\/g, "/");
-            const fullImageUrl = imageUrl ? `${BASE_URL}/${imageUrl}` : null;
+            const fullImageUrl = imageUrl ? `${VITE_SERVER_URL}/${imageUrl}` : null;
             
             return (
               <div
@@ -170,7 +221,6 @@ const ProviderDashboard = () => {
                   </div>
                 )}
 
-                {/* Status Update Buttons */}
                 <div className="grid grid-cols-3 gap-2 text-xs font-medium mb-3">
                   <button
                     onClick={() => updateProviderStatus(complaint._id, 'In Progress')}
@@ -207,11 +257,10 @@ const ProviderDashboard = () => {
                   </button>
                 </div>
 
-                {/* Cost Input */}
                 <div className="flex items-center gap-2">
                   <label className="text-xs font-medium text-gray-700">Cost (₹):</label>
                   <input
-                    type="number"
+                    type="text"
                     placeholder="Enter amount"
                     className="flex-1 text-xs px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-indigo-500"
                     value={costInputs[complaint._id] || ''}

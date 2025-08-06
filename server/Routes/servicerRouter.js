@@ -11,6 +11,6 @@ providerRouter.get('/assigned', protect, isProvider, getAssignedComplaints);
 providerRouter.get('/me', protect, isProvider, getProviderProfile);
 providerRouter.put('/update-status', protect, isProvider, updateProviderStatus);
 providerRouter.put('/update-cost', protect, isProvider, updateProviderCost);
-providerRouter.get('/create-stripe-account/:id',protect,isProvider,createStripeAccount);
+providerRouter.post('/create-stripe-account',protect,isProvider,createStripeAccount);
 
 export default providerRouter;
