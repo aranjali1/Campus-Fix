@@ -19,4 +19,14 @@ superRouter.post('/login', async (req, res) => {
     }
 })
 
+superRouter.get('/me', (req, res) => {
+    res.json({
+        user: {
+            name: "CampusFix Super Admin",
+            email: process.env.SUPERADMIN_EMAIL || "superadmin@example.com",
+            role: "superadmin"
+        }
+    });
+});
+
 export default superRouter;

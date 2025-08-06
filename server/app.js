@@ -9,6 +9,7 @@ import path from 'path';
 import adminRouter from './Routes/adminRouter.js';
 import superRouter from './Routes/superRouter.js';
 import bcrypt from 'bcryptjs';
+import servicerRouter from './Routes/servicerRouter.js';
 
 //bcrypt.compare("hostel","$2b$10$fsdtpcpv5bnwwb898yqzu.ydule6vjmtqxacynx88jlvuwddmzu1a").then(console.log).catch(console.error);
 
@@ -39,6 +40,7 @@ app.use('/api/user', userRouter);
 app.use('/api/complaints', complaintRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/superadmin',superRouter);
+app.use('/api/provider',servicerRouter);
 
 const PORT = process.env.PORT || 5001;
 

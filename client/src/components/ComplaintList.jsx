@@ -1,9 +1,9 @@
 import React from 'react';
 import ComplaintCard from './ComplaintCard';
-import AdminCards from './AdminCards'; // this should be the AdminCard (singular) component
+import AdminCards from './AdminCards'; // this is the AdminCard (singular) component
 import axios from 'axios';
 
-const ComplaintList = ({ complaints, user }) => {
+const ComplaintList = ({ complaints, user, onAssignTeam }) => {
   if (!complaints || complaints.length === 0) {
     return (
       <div className="mt-20 text-center flex flex-col items-center gap-3 px-4 mb-30">
@@ -19,21 +19,25 @@ const ComplaintList = ({ complaints, user }) => {
   }
 
   const handleStatusChange = async (id, newStatus) => {
-    try{
+    try {
       const token = localStorage.getItem('token');
-      const response=await axios.put(`/api/complaints/${id}/status`,{
+      await axios.put(`/api/complaints/${id}/status`, {
         status: newStatus,
-      },
-    {headers: { Authorization: `Bearer ${token}` } });
-    }catch(error) {
+      }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    } catch (error) {
       console.error(`Error updating complaint ${id} status:`, error);
-      alert("Failed to update status. Please try again.");
+      alert('Failed to update status. Please try again.');
     }
   };
 
-  const handleAssignTeam = (id) => {
-    // TODO: Open modal or directly assign a team
-    console.log(`Assigning team for complaint ${id}`);
+  const handleAssignTeam = (id, category) => {
+    if (onAssignTeam) {
+      onAssignTeam(id, category);
+    } else {
+      console.log(`Assigning team for complaint ${id} with category ${category}`);
+    }
   };
 
   return (
@@ -44,11 +48,11 @@ const ComplaintList = ({ complaints, user }) => {
 
         return (
           <CardComponent
-            key={complaint.complaintId || complaint._id}
+            key={complaint._id}
             complaint={complaint}
             {...(isAdmin && {
               onStatusChange: handleStatusChange,
-              onAssignTeam: handleAssignTeam,
+              onAssignTeam: () => handleAssignTeam(complaint._id, complaint.category),
             })}
           />
         );

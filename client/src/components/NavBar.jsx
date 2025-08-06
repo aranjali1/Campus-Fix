@@ -9,16 +9,27 @@ const NavBar = () => {
   const [user, setUser] = useState(null);
 
   useEffect(() => {
+    const role = localStorage.getItem('role');
     const token = localStorage.getItem('token');
 
-    if (!token) {
+    if (!token || !role) {
       setUser(null);
       return;
     }
 
     const fetchUser = async () => {
+      let endpoint = '';
+      if (role === 'student') endpoint = '/api/user/me';
+      else if (role === 'admin') endpoint = '/api/admin/me';
+      else if (role === 'superadmin') endpoint = '/api/superadmin/me';
+      else if (role === 'provider') endpoint = '/api/provider/me';
+      else {
+        setUser(null);
+        return;
+      }
+
       try {
-        const response = await fetch('/api/user/me', {
+        const response = await fetch(endpoint, {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -29,11 +40,10 @@ const NavBar = () => {
         }
 
         const data = await response.json();
-        console.log('User data:', data);
-        setUser(data.user || data); // Assumes backend returns { name, role }
+        setUser(data.user || data.admin || data.superadmin || data);
       } catch (error) {
         console.error('Error fetching user:', error);
-        localStorage.removeItem('token');
+        localStorage.clear();
         setUser(null);
       }
     };
@@ -42,7 +52,7 @@ const NavBar = () => {
   }, [location]);
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    localStorage.clear();
     alert('You have been logged out successfully.');
     navigate('/');
     setUser(null);
@@ -51,41 +61,35 @@ const NavBar = () => {
   return (
     <nav className="fixed w-full top-0 z-50 bg-white border-b border-gray-200 shadow-md px-2 sm:px-6 lg:px-8 py-1 rounded-2xl mx-auto mt-4">
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between">
-        {/* Left: Logo + Brand Name */}
         <div onClick={() => navigate('/')} className="flex cursor-pointer items-center gap-2 mb-2 sm:mb-0">
           <img src={assets.logo} alt="CampusFix Logo" className="h-16 w-16 object-contain" />
           <p className="text-2xl font-bold text-[#0f172a]">Campus Fix</p>
         </div>
 
-        {/* Right: User Info + Buttons */}
         <div className="flex items-center gap-3">
           {user && (
             <>
-              {/* User Info */}
               <div className="flex items-center gap-2 px-3 py-1 border border-gray-300 rounded-xl bg-gray-50">
                 <FaUserCircle className="text-xl text-gray-700" />
                 <div className="text-sm text-gray-700 leading-tight">
                   <p className="font-semibold">
-                    {user.role==='admin'?user.location:user.name}
+                    {user.role === 'admin' ? user.location : user.name}
                   </p>
                   <p className="text-xs text-gray-500 capitalize">{user.role}</p>
                 </div>
               </div>
 
-              {/* Raise Complaint Button */}
               {user.role === 'student' && (
                 <button
-                onClick={() => navigate('/submit')}
-                className="bg-[#0f172a] hover:bg-[#1e293b] text-white font-medium py-2 px-4 rounded-xl transition"
-              >
-                Raise Complaint
-              </button>
+                  onClick={() => navigate('/submit')}
+                  className="bg-[#0f172a] hover:bg-[#1e293b] text-white font-medium py-2 px-4 rounded-xl transition"
+                >
+                  Raise Complaint
+                </button>
               )}
-
             </>
           )}
 
-          {/* Login / Logout Button */}
           {user ? (
             <button
               onClick={handleLogout}

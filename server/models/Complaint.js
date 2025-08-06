@@ -45,7 +45,26 @@ const complaintSchema = new mongoose.Schema({
     type:String,
     required:true,
     unique:true,
-  }
+  },
+  assignedToProvider:{
+    type:mongoose.Schema.Types.ObjectId,
+    ref:"Servicer",
+    default:null,
+  },
+  providerStatus:{
+    type:String,
+    enum:["Pending","In Progress","Resolved","Rejected"],
+    default:"Pending",
+  },
+  providerCost:{
+    type:Number,
+    default:null,
+  },
+  paymentStatus:{
+    type:String,
+    enum:["Pending","Paid","Rejected"],
+    default:"Pending",
+  },
 });
 
 const Complaint = mongoose.model("Complaint", complaintSchema);

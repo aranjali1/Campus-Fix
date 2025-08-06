@@ -6,7 +6,7 @@ import BASE_URL from '../utils/api';
 const Login = () => {
   const [form, setForm] = useState({ name: '', email: '', password: '' });
   const [state, setState] = useState('login');
-  const [role, setRole] = useState('student'); // student | admin | superadmin
+  const [role, setRole] = useState('student'); // student | admin | superadmin | provider
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -14,8 +14,8 @@ const Login = () => {
     e.preventDefault();
     setLoading(true);
 
-    // Prevent admin from signing up through this form
-    if (state === 'signup' && (role === 'admin' || role === 'superadmin')) {
+    // Prevent signup for restricted roles
+    if (state === 'signup' && (role === 'admin' || role === 'superadmin' || role === 'provider')) {
       alert(`${role[0].toUpperCase() + role.slice(1)}s must register through the dedicated registration page.`);
       setLoading(false);
       return;
@@ -33,18 +33,20 @@ const Login = () => {
         ? '/api/admin/login'
         : role === 'superadmin'
         ? '/api/superadmin/login'
+        : role === 'provider'
+        ? '/api/provider/login'
         : '/api/user/login';
 
     try {
       const res = await axios.post(`${BASE_URL}${endpoint}`, dataToSend);
-      const { token, user, admin, superadmin } = res.data;
-      const account = user || admin || superadmin;
+      const { token, user, admin, superadmin, provider } = res.data;
+      const account = user || admin || superadmin || provider;
 
-      if (!token) {
-        throw new Error('No token received from server');
-      }
+      if (!token) throw new Error('No token received from server');
 
+      // ✅ Store token based on role
       localStorage.setItem('token', token);
+
       localStorage.setItem('role', account?.role || role);
       localStorage.setItem('user', JSON.stringify(account || {}));
 
@@ -54,19 +56,20 @@ const Login = () => {
         setForm({ name: '', email: '', password: '' });
       } else {
         const resolvedRole = account?.role || role;
-        if (resolvedRole === 'superadmin' || role === 'superadmin') {
+        if (resolvedRole === 'superadmin') {
           navigate('/dashboard/superadmin');
         } else if (resolvedRole === 'admin') {
           navigate('/dashboard/admin');
+        } else if (resolvedRole === 'provider') {
+          navigate('/dashboard/provider');
         } else {
           navigate('/dashboard/user');
         }
       }
     } catch (error) {
       console.error('Error during authentication:', error);
-      const errorMessage = error.response?.data?.message || 
-                          error.message || 
-                          'Authentication failed. Please try again.';
+      const errorMessage =
+        error.response?.data?.message || error.message || 'Authentication failed. Please try again.';
       alert(errorMessage);
     } finally {
       setLoading(false);
@@ -114,12 +117,9 @@ const Login = () => {
           required
         />
 
-        <div className="flex gap-4 mt-1 mb-2">
-          {['student', 'admin', 'superadmin'].map((r) => (
-            <label
-              key={r}
-              className="flex items-center gap-2 text-sm font-medium cursor-pointer"
-            >
+        <div className="flex gap-4 mt-1 mb-2 flex-wrap">
+          {['student', 'admin', 'superadmin', 'provider'].map((r) => (
+            <label key={r} className="flex items-center gap-2 text-sm font-medium cursor-pointer">
               <input
                 type="radio"
                 name="role"
@@ -180,16 +180,15 @@ const Login = () => {
             Register as Admin
           </span>
         </p>
-      </div>
-
-      <div className="mt-6 bg-gray-100 border border-gray-300 p-4 rounded-lg text-xs text-left">
-        <h3 className="font-semibold mb-2 text-sm text-gray-700">🔐 Test Credentials:</h3>
-        <p><strong>Admin Email:</strong> <code>hostel1@gmail.com</code></p>
-        <p><strong>Admin Password:</strong> <code>hostel</code></p>
-        <p className="mt-2"><strong>Student Email:</strong> <code>kittu@gmail.com</code></p>
-        <p><strong>Student Password:</strong> <code>kittuji</code></p>
-        <p className="mt-2"><strong>SuperAdmin Email:</strong> <code>superadmin@gmail.com</code></p>
-        <p><strong>SuperAdmin Password:</strong> <code>superadmin</code></p>
+        <p className="mt-1">
+          Want to become a service provider?{' '}
+          <span
+            onClick={() => navigate('/provider/register')}
+            className="text-blue-600 hover:underline cursor-pointer"
+          >
+            Register as Service Provider
+          </span>
+        </p>
       </div>
     </div>
   );

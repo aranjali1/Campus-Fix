@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import Title from '../components/Title';
 import SummaryCards from '../components/SummaryCards';
 import ComplaintList from '../components/ComplaintList';
+import { useNavigate } from 'react-router-dom';
 
 const AdminDashboard = () => {
   const [complaints, setComplaints] = useState([]);
@@ -13,7 +14,7 @@ const AdminDashboard = () => {
   const statusMap = {
     All: '',
     Pending: 'pending',
-    'In Progress': 'in_progress',
+    'In Progress': 'in-progress',
     Resolved: 'resolved',
     Rejected: 'rejected',
   };
@@ -54,6 +55,11 @@ const AdminDashboard = () => {
 
   const statusOptions = ['All', 'Pending', 'In Progress', 'Resolved', 'Rejected'];
 
+  const navigate = useNavigate();
+  const handleAssignTeam = (complaintId, category) => {
+    navigate(`/admin/assign/${complaintId}/${category}`);
+  };
+
   return (
     <div className='px-4 sm:px-6 lg:px-16 xl:px-24 2xl:px-32 mt-32'>
       <Title title="🛠️Admin Dashboard" subtitle="Track, Verify, and Respond to Student Complaints" />
@@ -84,7 +90,11 @@ const AdminDashboard = () => {
       </div>
 
       {/* ComplaintList */}
-      <ComplaintList complaints={filteredComplaints} user={user} />
+      <ComplaintList
+       complaints={filteredComplaints}
+        user={user}
+        onAssignTeam={handleAssignTeam}
+         />
     </div>
   );
 };

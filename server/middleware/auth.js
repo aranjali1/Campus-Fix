@@ -1,6 +1,7 @@
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import { Admin } from '../models/Admin.js';
+import Servicer from '../models/Servicer.js';
 
 export const protect = async (req, res, next) => {
     const token = req.headers.authorization?.split(" ")[1];
@@ -46,6 +47,21 @@ export const protect = async (req, res, next) => {
             }
         }
 
+        if(role==='provider'){
+            const provider=await Servicer.findById(id).select('-password');
+            if(provider){
+                req.user={
+                    _id:provider._id,
+                    email:provider.email,
+                    name:provider.name,
+                    phone:provider.phone,
+                    categories:provider.categories,
+                    role:'provider'
+                };
+                return next();
+            }
+        }
+
         return res.status(401).json({ message: "Not authorized, user not found or not approved" });
     } catch (error) {
         console.error("Auth error:", error.message);
@@ -73,3 +89,10 @@ export const isSuperAdmin = (req, res, next) => {
     }
     next();
 };
+
+export const isProvider=(req,res,next)=>{
+    if(req.user.role!=='provider'){
+        return res.status(403).json({ message: "Access denied, not a provider" });
+        }
+        next();
+}
