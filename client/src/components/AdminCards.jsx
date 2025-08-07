@@ -52,6 +52,7 @@ function AdminCard({ complaint, onStatusChange, onAssignTeam }) {
       const body = {
         complaintId: _id,
         amount: providerCost,
+        providerId:assignedToProvider,
         description: `Payment for complaint: ${title}`,
       };
 

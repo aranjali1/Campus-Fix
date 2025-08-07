@@ -1,9 +1,8 @@
 import Servicer from "../models/Servicer.js";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";
-import Complaint from "../models/Complaint.js"; // Added import for Complaint
-import stripePackage from 'stripe';
-
+import Complaint from "../models/Complaint.js"; 
+import stripePackage from "stripe";
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error("JWT_SECRET not defined in .env");
@@ -219,23 +218,25 @@ export const createStripeAccount=async(req,res)=>{
     const account=await stripe.accounts.create({
       type: 'express',
       country: 'US',
+      email:provider.email,
       capabilities:{
         card_payments:{requested:true},
         transfers:{requested:true}
       },
     });
     provider.stripeAccountId=account.id;
+    provider.onboardingComplete=true;
     await provider.save();
   }
   const accountLink=await stripe.accountLinks.create({
     account: provider.stripeAccountId,
     refresh_url:'http://localhost:5173/provider/onboarding/refresh',
-    return_url:'http://localhost:5173/provider/onboarding',
+    return_url:'http://localhost:5173/provider/onboarding/return',
     type:'account_onboarding',
   });
   res.status(200).json({url:accountLink.url});
 }catch(err){
   console.error('Error creating stripe account:', err);
-  res.status(500).json({err:'Stripe onboarding failed'});
+  res.status(500).json({error:'Stripe onboarding failed', message:err.message});
 }
 };

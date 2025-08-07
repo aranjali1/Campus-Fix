@@ -30,7 +30,14 @@ const servicerSchema = new mongoose.Schema({
     required: true,
     enum: ['electrician', 'plumber', 'carpenter', 'cleaner', 'other']
   },
-  stripeAccountId:{type:String},
+  stripeAccountId:{type:String,
+    default:null,
+  },
+
+  onboardingComplete:{
+    type:Boolean,
+    default:false
+  },
 
   assignedComplaints: [{
     type: mongoose.Schema.Types.ObjectId,

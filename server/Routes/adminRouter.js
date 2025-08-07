@@ -17,6 +17,7 @@ import { getComplaintsByLocation } from "../controller/complaintController.js";
 import { getProviders } from "../controller/servicerController.js";
 import { protect, isSuperAdmin, isAdmin,isStudent } from "../middleware/auth.js";
 
+
 const adminRouter = express.Router();
 
 // Public Routes
@@ -37,5 +38,6 @@ adminRouter.get('/providers',getProviders);
 adminRouter.post('/assign',protect,isAdmin,assignProvider);
 adminRouter.put('/update-payment', protect, isAdmin, updatePaymentStatus);
 adminRouter.post('/create-payment-intent', protect, isAdmin, createPaymentIntent);
+
 
 export default adminRouter;

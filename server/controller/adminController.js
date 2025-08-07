@@ -230,26 +230,28 @@ export const updatePaymentStatus = async (req, res) => {
 // POST: Create Stripe Payment Intent (admin → provider)
 export const createPaymentIntent = async (req, res) => {
   try {
-    const { complaintId, amount } = req.body;
+    const { complaintId, amount, providerId } = req.body;
 
-    if (!complaintId || !amount) {
-      return res.status(400).json({ message: "Complaint ID and amount are required" });
+    if (!complaintId || !amount || !providerId) {
+      return res.status(400).json({ message: "Complaint ID,Provider ID and amount are required" });
     }
 
-    const complaint = await Complaint.findById(complaintId).populate('assignedToProvider');
-    if (!complaint) {
-      return res.status(404).json({ message: "Complaint not found" });
+    const provider=await Servicer.findById(providerId);
+    if(!provider || !provider.stripeAccountId){
+      return res.status(404).json({ message: "Provider not found" });
     }
-
-    if(!complaint.assignedToProvider?.stripeAccountId){
-      return res.status(400).json({ message: "Provider has not been assigned to this complaint"});
+    if(!provider.onboardingComplete){
+      return res.status(400).json({ message: "Provider is not onboarded" });
     }
-    const provider=await Servicer.findById(complaint.assignedToProvider._id);
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100),
-      currency: 'inr',
+      currency: 'usd',
       payment_method_types: ['card'],
       description: `Payment for complaint ID: ${complaintId}`,
+      metadata:{
+        complaintId,
+        providerId
+      },
       transfer_data: {
         destination: provider.stripeAccountId,
       },

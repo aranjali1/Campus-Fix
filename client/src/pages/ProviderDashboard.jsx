@@ -24,7 +24,7 @@ const ProviderDashboard = () => {
         // Initialize cost inputs
         const initialCosts = {};
         complaintsData.forEach(complaint => {
-          if (complaint.providerCost !== undefined) {
+          if (complaint.providerCost !== undefined && complaint.providerCost !== null) {
             initialCosts[complaint._id] = complaint.providerCost.toString();
           }
         });
