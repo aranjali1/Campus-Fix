@@ -44,7 +44,7 @@ const Login = () => {
 
       if (!token) throw new Error('No token received from server');
 
-      // ✅ Store token based on role
+      // Store token based on role
       localStorage.setItem('token', token);
 
       localStorage.setItem('role', account?.role || role);

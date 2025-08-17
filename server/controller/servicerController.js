@@ -7,12 +7,12 @@ import stripePackage from "stripe";
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) throw new Error("JWT_SECRET not defined in .env");
 
-// 📌 Register a new Service Provider
+// Register a new Service Provider
 export const registerProvider = async (req, res) => {
   try {
     const { name, email, password, phone, categories } = req.body;
 
-    // Check for existing provider
+    // Check for existing providera
     const existingProvider = await Servicer.findOne({ email });
     if (existingProvider) {
       return res.status(400).json({ message: "Email already registered" });
@@ -40,7 +40,7 @@ export const registerProvider = async (req, res) => {
   }
 };
 
-// 📌 Login for Service Provider
+// Login for Service Provider
 export const loginProvider = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -106,7 +106,6 @@ export const getProviderProfile=(req,res)=>{
     email:req.user.email,
     phone:req.user.phone,
     role:'provider',
-    stripeAccountId:req.user.stripeAccountId || null,
   });
 }
 

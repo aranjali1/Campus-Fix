@@ -9,7 +9,7 @@ import path from 'path';
 import adminRouter from './Routes/adminRouter.js';
 import superRouter from './Routes/superRouter.js';
 import bcrypt from 'bcryptjs';
-import servicerRouter from './Routes/servicerRouter.js';
+import providerRouter from './Routes/providerRouter.js';
 
 //bcrypt.compare("hostel","$2b$10$fsdtpcpv5bnwwb898yqzu.ydule6vjmtqxacynx88jlvuwddmzu1a").then(console.log).catch(console.error);
 
@@ -21,7 +21,7 @@ const startServer = async () => {
 const app = express();
 
 //middleware
-app.use(cors({
+app.use(cors({ 
     origin: process.env.CLIENT_URL, 
 }));
 app.use(express.json());
@@ -40,7 +40,7 @@ app.use('/api/user', userRouter);
 app.use('/api/complaints', complaintRouter);
 app.use('/api/admin', adminRouter);
 app.use('/api/superadmin',superRouter);
-app.use('/api/provider',servicerRouter);
+app.use('/api/provider',providerRouter);
 
 const PORT = process.env.PORT || 5001;
 
