@@ -4,19 +4,27 @@ import path from "path";
 // Storage engine
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, "uploads/"); // Folder to save images
+    // Store admin ID proofs inside /uploads/adminProofs
+    cb(null, "uploads/adminProofs/");
   },
   filename: function (req, file, cb) {
     cb(null, Date.now() + "-" + file.originalname);
   }
 });
 
-// Filter only images
+// Allow Images AND PDFs
 const fileFilter = (req, file, cb) => {
-  if(['image/jpeg','image/jpg','image/png'].includes(file.mimetype)){
-        cb(null,true);
-    } else {
-    cb(new Error("Only JPEG/PNG images allowed"));
+  const allowed = [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "application/pdf"
+  ];
+
+  if (allowed.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new Error("Only JPG, PNG, or PDF files are allowed"));
   }
 };
 

@@ -20,29 +20,34 @@ export const getPendingAdmins = async (req, res) => {
 
 // POST: Submit a new admin registration request
 export const requestAdminRegistration = async (req, res) => {
-  const { email, password, location } = req.body;
-
-  if (!email || !password || !location) {
-    return res.status(400).json({ success: false, message: "All fields are required." });
-  }
-
   try {
+    const { fullName, staffId, email, password, location } = req.body;
+    const idProof = req.file?.path; // multer stores file here
+    
+    if (!fullName || !staffId || !email || !password || !location || !idProof) {
+      return res.status(400).json({ success: false, message: "All fields including ID Proof are required." });
+    }
+
     const existingAdmin = await Admin.findOne({ email });
     if (existingAdmin) {
       return res.status(400).json({ success: false, message: "An admin with this email already exists." });
     }
 
-    const hashedPassword = password; // Insecure - for demo only
+    // bcrypt hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     await Admin.create({
+      fullName,
+      staffId,
       email,
       password: hashedPassword,
       location,
+      idProof,
       status: "pending",
       role: "admin"
     });
 
-    res.json({ success: true, message: "Admin registration request submitted. Please wait for approval." });
+    res.json({ success: true, message: "Admin registration request submitted successfully. Await approval." });
   } catch (error) {
     console.error("Error in admin registration request:", error);
     res.status(500).json({ success: false, message: "Server error. Please try again later." });
@@ -113,7 +118,11 @@ export const loginAdmin = async (req, res) => {
       return res.status(403).json({ success: false, message: "Admin account not approved yet" });
     }
 
-    // Password check skipped
+    const isMatch = await bcrypt.compare(password, admin.password);
+    if (!isMatch) {
+      return res.status(400).json({ success: false, message: "Incorrect password" });
+    }
+
     const token = jwt.sign(
       { id: admin._id, role: admin.role, location: admin.location },
       process.env.JWT_SECRET,
@@ -125,8 +134,11 @@ export const loginAdmin = async (req, res) => {
       token,
       admin: {
         id: admin._id,
+        fullName: admin.fullName,
+        staffId: admin.staffId,
         email: admin.email,
         location: admin.location,
+        idProof: admin.idProof,
         role: admin.role
       }
     });
@@ -158,8 +170,11 @@ export const getAdminProfile = async (req, res) => {
     res.json({
       user: {
         id: admin._id,
+        fullName: admin.fullName,
+        staffId: admin.staffId,
         email: admin.email,
         location: admin.location,
+        idProof: admin.idProof,
         role: admin.role
       }
     });
@@ -227,7 +242,7 @@ export const updatePaymentStatus = async (req, res) => {
   }
 };
 
-// POST: Create Stripe Payment Intent (admin → provider)
+// POST: Create Stripe Payment Intent
 export const createPaymentIntent = async (req, res) => {
   try {
     const { complaintId, amount, providerId } = req.body;
@@ -236,22 +251,20 @@ export const createPaymentIntent = async (req, res) => {
       return res.status(400).json({ message: "Complaint ID,Provider ID and amount are required" });
     }
 
-    const provider=await Servicer.findById(providerId);
-    if(!provider || !provider.stripeAccountId){
+    const provider = await Servicer.findById(providerId);
+    if (!provider || !provider.stripeAccountId) {
       return res.status(404).json({ message: "Provider not found" });
     }
-    if(!provider.onboardingComplete){
+    if (!provider.onboardingComplete) {
       return res.status(400).json({ message: "Provider is not onboarded" });
     }
+
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100),
       currency: 'usd',
       payment_method_types: ['card'],
       description: `Payment for complaint ID: ${complaintId}`,
-      metadata:{
-        complaintId,
-        providerId
-      },
+      metadata: { complaintId, providerId },
       transfer_data: {
         destination: provider.stripeAccountId,
       },
@@ -267,3 +280,28 @@ export const createPaymentIntent = async (req, res) => {
     res.status(500).json({ success: false, message: "Server error while creating payment intent" });
   }
 };
+
+// DELETE: Remove an approved admin
+export const handleRemoveApprovedAdmin = async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const admin = await Admin.findById(id);
+
+    if (!admin) {
+      return res.status(404).json({ success: false, message: "Admin not found" });
+    }
+
+    if (admin.status !== "approved") {
+      return res.status(400).json({ success: false, message: "Only approved admins can be removed" });
+    }
+
+    await Admin.findByIdAndDelete(id);
+
+    res.json({ success: true, message: "Admin removed successfully" });
+  } catch (error) {
+    console.error("Error removing admin:", error);
+    res.status(500).json({ success: false, message: "Server error while removing admin" });
+  }
+};
+

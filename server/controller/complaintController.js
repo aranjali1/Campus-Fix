@@ -101,4 +101,45 @@ export const getComplaintsByLocation = async (req, res) => {
     }
 };
 
+export const getAllComplaintsForSuperadmin = async (req, res) => {
+  try {
+    const complaints = await Complaint.find().sort({ createdAt: -1 });
+
+    if (!complaints || complaints.length === 0) {
+      return res.status(200).json({
+        success: true,
+        complaints: []
+      });
+    }
+
+    const formatted = complaints.map((c) => {
+      if (!c || !c._id) return null; // skip corrupt docs
+
+      return {
+        _id: c._id.toString(),
+        title: c.title || "Untitled",
+        description: c.description || "",
+        category: c.category || "General",
+        location: c.location || "Unknown",
+        status: c.status || "pending",
+        createdAt: c.createdAt || null,
+        updatedAt: c.updatedAt || null,
+      };
+    }).filter(Boolean); // remove null entries
+
+    res.status(200).json({
+      success: true,
+      complaints: formatted,
+    });
+
+  } catch (error) {
+    console.error("Superadmin complaint fetch error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching complaints",
+      error: error.message,
+    });
+  }
+};
+
 

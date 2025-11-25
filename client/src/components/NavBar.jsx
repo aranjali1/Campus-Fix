@@ -58,6 +58,15 @@ const NavBar = () => {
     setUser(null);
   };
 
+  const goToDashboard = () => {
+    const role = user?.role;
+
+    if (role === 'student') navigate('/dashboard/user');
+    else if (role === 'admin') navigate('/dashboard/admin');
+    else if (role === 'superadmin') navigate('/dashboard/superadmin');
+    else if (role === 'provider') navigate('/dashboard/provider');
+  };
+
   return (
     <nav className="fixed w-full top-0 z-50 bg-white border-b border-gray-200 shadow-md px-2 sm:px-6 lg:px-8 py-1 rounded-2xl mx-auto mt-4">
       <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between">
@@ -87,6 +96,14 @@ const NavBar = () => {
                   Raise Complaint
                 </button>
               )}
+
+              {/* Dashboard Button */}
+              <button
+                onClick={goToDashboard}
+                className="bg-[#0f172a] hover:bg-[#1e293b] text-white font-medium py-2 px-4 rounded-xl transition"
+              >
+                Dashboard
+              </button>
             </>
           )}
 
